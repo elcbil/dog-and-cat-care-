@@ -209,10 +209,7 @@ if (!empty($form_data)) {
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="#home">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
-                    </li>
+                    </li>                    
                     <li class="nav-item">
                         <a class="nav-link" href="#services">Services</a>
                     </li>
@@ -220,8 +217,12 @@ if (!empty($form_data)) {
                         <a class="nav-link" href="#testimonials">Testimonials</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
+                        <a class="nav-link" href="#contact">Reservation</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="history.php">History</a>
+                    </li>
+                    
                     <!-- Tampilkan nama user yang sedang login -->
                     <li class="nav-item">
                         <a class="nav-link" href="logout_user.php">Halo, <?= htmlspecialchars($user_username); ?>!</a>
