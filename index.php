@@ -117,49 +117,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['book_appointment'])) {
     
     // If no validation errors, proceed with database insertion
     if (empty($validation_errors)) {
-        $booking_data = [
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'email' => $email,
-            'phone' => $phone,
-            'service_id' => $service_id,
-            'appointment_date' => $appointment_date,
-            'appointment_time' => $appointment_time,
-            'message' => $message,
-            'created_at' => date('Y-m-d H:i:s'),
-            'status' => 'pending'
-        ];
-        
-        try {
-            if (createBooking($booking_data)) {
-                // Generate new CSRF token after successful submission
-                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                
-                // Log successful booking (optional)
-                error_log("New appointment booked: {$email} for service ID {$service_id} on {$appointment_date} at {$appointment_time}");
-                
-                // Redirect with success message to prevent form resubmission
-                header('Location: ' . $_SERVER['PHP_SELF'] . '?status=success');
-                exit();
-            } else {
-                // Log database error
-                error_log("Failed to create booking for: {$email}");
-                header('Location: ' . $_SERVER['PHP_SELF'] . '?status=db_error');
-                exit();
-            }
-        } catch (Exception $e) {
-            // Log the actual error for debugging
-            error_log("Booking creation error: " . $e->getMessage());
+    $booking_data = [
+        'first_name' => $firstName,
+        'last_name' => $lastName,
+        'email' => $email,
+        'phone' => $phone,
+        'service_id' => $service_id,
+        'appointment_date' => $appointment_date,
+        'appointment_time' => $appointment_time,
+        'message' => $message,
+        'created_at' => date('Y-m-d H:i:s'),
+        'status' => 'pending',
+        'user_id' => $_SESSION['user_id'] ?? null // Tambahkan user_id
+    ];
+    
+    try {
+        if (createBooking($booking_data)) {
+            // Generate new CSRF token after successful submission
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            
+            // Log successful booking (optional)
+            error_log("New appointment booked: {$email} for service ID {$service_id} on {$appointment_date} at {$appointment_time}");
+            
+            // Redirect to history page instead of staying on index
+            header('Location: history.php?status=success');
+            exit();
+        } else {
+            // Log database error
+            error_log("Failed to create booking for: {$email}");
             header('Location: ' . $_SERVER['PHP_SELF'] . '?status=db_error');
             exit();
         }
-    } else {
-        // If validation errors exist, redirect with validation error
-        $_SESSION['validation_errors'] = $validation_errors;
-        $_SESSION['form_data'] = $_POST; // Preserve form data
-        header('Location: ' . $_SERVER['PHP_SELF'] . '?status=validation_error');
+    } catch (Exception $e) {
+        // Log the actual error for debugging
+        error_log("Booking creation error: " . $e->getMessage());
+        header('Location: ' . $_SERVER['PHP_SELF'] . '?status=db_error');
         exit();
     }
+}
 }
 
 // Handle status messages from redirect

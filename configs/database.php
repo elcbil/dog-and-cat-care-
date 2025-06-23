@@ -95,8 +95,8 @@ function createBooking($data) {
     $database = new Database();
     $db = $database->getConnection();
     
-    $query = "INSERT INTO bookings (first_name, last_name, email, phone, service_id, appointment_date, appointment_time, message) 
-              VALUES (:first_name, :last_name, :email, :phone, :service_id, :appointment_date, :appointment_time, :message)";
+    $query = "INSERT INTO bookings (first_name, last_name, email, phone, service_id, appointment_date, appointment_time, message, user_id) 
+              VALUES (:first_name, :last_name, :email, :phone, :service_id, :appointment_date, :appointment_time, :message, :user_id)";
     
     $stmt = $db->prepare($query);
     
@@ -108,7 +108,8 @@ function createBooking($data) {
         ':service_id' => $data['service_id'],
         ':appointment_date' => $data['appointment_date'],
         ':appointment_time' => $data['appointment_time'],
-        ':message' => $data['message']
+        ':message' => $data['message'],
+        ':user_id' => $data['user_id'] ?? null
     ]);
 }
 
@@ -125,15 +126,19 @@ function updateBookingStatus($id, $status) {
     ]);
 }
 
-function getUserBookings($email) {
-    global $pdo;
-    $stmt = $pdo->prepare("SELECT b.*, s.name as service_name 
-                           FROM bookings b
-                           JOIN services s ON b.service_id = s.id
-                           WHERE b.email = :email
-                           ORDER BY b.created_at DESC");
-    $stmt->execute(['email' => $email]);
-    return $stmt->fetchAll(PDO::FETCH_OBJ); // Mengambil hasil sebagai objek
+function getUserBookingsByUserId($user_id) {
+    $database = new Database();
+    $db = $database->getConnection();
+    
+    $query = "SELECT b.*, s.name as service_name 
+              FROM bookings b
+              LEFT JOIN services s ON b.service_id = s.id
+              WHERE b.user_id = :user_id
+              ORDER BY b.created_at DESC";
+    $stmt = $db->prepare($query);
+    $stmt->execute([':user_id' => $user_id]);
+    
+    return $stmt->fetchAll();
 }
 
 
