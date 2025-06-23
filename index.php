@@ -4,6 +4,14 @@ require_once './configs/database.php';
 // Start session for CSRF protection
 session_start();
 
+if (!isset($_SESSION['user_logged_in']) || $_SESSION['user_logged_in'] !== true) {
+    // Jika belum login, arahkan ke halaman login
+    header('Location: login_user.php');
+    exit();
+}
+
+$user_username = isset($_SESSION['user_username']) ? $_SESSION['user_username'] : 'Guest';
+
 // Generate CSRF token if not exists
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -178,6 +186,8 @@ if (!empty($form_data)) {
     unset($_SESSION['form_data']);
 }
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,6 +226,10 @@ if (!empty($form_data)) {
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                    <!-- Tampilkan nama user yang sedang login -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="logout_user.php">Halo, <?= htmlspecialchars($user_username); ?>!</a>
                     </li>
                 </ul>
             </div>

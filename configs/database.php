@@ -125,6 +125,18 @@ function updateBookingStatus($id, $status) {
     ]);
 }
 
+function getUserBookings($email) {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT b.*, s.name as service_name 
+                           FROM bookings b
+                           JOIN services s ON b.service_id = s.id
+                           WHERE b.email = :email
+                           ORDER BY b.created_at DESC");
+    $stmt->execute(['email' => $email]);
+    return $stmt->fetchAll(PDO::FETCH_OBJ); // Mengambil hasil sebagai objek
+}
+
+
 function approveTestimonial($id) {
     $database = new Database();
     $db = $database->getConnection();
