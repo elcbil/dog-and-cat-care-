@@ -2,6 +2,21 @@
 session_start();
 require_once './configs/database.php';
 
+function getStatusBadgeClass($status) {
+    switch ($status) {
+        case 'confirmed':
+            return 'success';
+        case 'pending':
+            return 'warning';
+        case 'completed':
+            return 'primary';
+        case 'cancelled':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
+}
+
 // Check if user is logged in
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: login.php');
@@ -62,6 +77,9 @@ $testimonials = getAllTestimonials();
 // Calculate statistics
 $total_bookings = count($bookings);
 $pending_bookings = count(array_filter($bookings, function($b) { return $b->status === 'pending'; }));
+$confirmed_bookings = count(array_filter($bookings, function($b) { return $b->status === 'confirmed'; }));
+$completed_bookings = count(array_filter($bookings, function($b) { return $b->status === 'completed'; }));
+$cancelled_bookings = count(array_filter($bookings, function($b) { return $b->status === 'cancelled'; }));
 $approved_testimonials = count(array_filter($testimonials, function($t) { return $t->is_approved == 1; }));
 $pending_testimonials = count(array_filter($testimonials, function($t) { return $t->is_approved == 0; }));
 ?>
@@ -262,6 +280,7 @@ $pending_testimonials = count(array_filter($testimonials, function($t) { return 
                     <button class="btn btn-outline-secondary" onclick="filterBookings('all')">All</button>
                     <button class="btn btn-outline-warning" onclick="filterBookings('pending')">Pending</button>
                     <button class="btn btn-outline-success" onclick="filterBookings('confirmed')">Confirmed</button>
+                    <button class="btn btn-outline-primary" onclick="filterBookings('completed')">Completed</button>
                     <button class="btn btn-outline-danger" onclick="filterBookings('cancelled')">Cancelled</button>
                 </div>
             </div>
@@ -294,7 +313,7 @@ $pending_testimonials = count(array_filter($testimonials, function($t) { return 
                                     <small class="text-muted"><?= date('g:i A', strtotime($booking->appointment_time)); ?></small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-<?= $booking->status === 'confirmed' ? 'success' : ($booking->status === 'pending' ? 'warning' : 'danger'); ?>">
+                                    <span class="badge bg-<?= getStatusBadgeClass($booking->status); ?>">
                                         <?= ucfirst($booking->status); ?>
                                     </span>
                                 </td>
@@ -302,6 +321,7 @@ $pending_testimonials = count(array_filter($testimonials, function($t) { return 
                                     <select class="form-select form-select-sm" onchange="updateBookingStatus(<?= $booking->id; ?>, this.value)">
                                         <option value="pending" <?= $booking->status === 'pending' ? 'selected' : ''; ?>>Pending</option>
                                         <option value="confirmed" <?= $booking->status === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                                        <option value="completed" <?= $booking->status === 'completed' ? 'selected' : ''; ?>>Completed</option>
                                         <option value="cancelled" <?= $booking->status === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                                     </select>
                                 </td>
@@ -682,7 +702,27 @@ $pending_testimonials = count(array_filter($testimonials, function($t) { return 
                     // Update the badge in the row instead of reloading
                     const row = document.querySelector(`select[onchange*="${bookingId}"]`).closest('tr');
                     const badge = row.querySelector('.badge');
-                    badge.className = `badge bg-${status === 'confirmed' ? 'success' : (status === 'pending' ? 'warning' : 'danger')}`;
+                    
+                    // Update badge class and text based on status
+                    let badgeClass = '';
+                    switch(status) {
+                        case 'confirmed':
+                            badgeClass = 'success';
+                            break;
+                        case 'pending':
+                            badgeClass = 'warning';
+                            break;
+                        case 'completed':
+                            badgeClass = 'primary';
+                            break;
+                        case 'cancelled':
+                            badgeClass = 'danger';
+                            break;
+                        default:
+                            badgeClass = 'secondary';
+                    }
+                    
+                    badge.className = `badge bg-${badgeClass}`;
                     badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
                     row.dataset.status = status;
                     
@@ -690,6 +730,10 @@ $pending_testimonials = count(array_filter($testimonials, function($t) { return 
                 } else {
                     showAlert('Error updating booking status', 'danger');
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error updating booking status', 'danger');
             });
         }
 
@@ -702,6 +746,12 @@ $pending_testimonials = count(array_filter($testimonials, function($t) { return 
                     row.style.display = 'none';
                 }
             });
+            
+            // Update active button
+            document.querySelectorAll('.btn-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`button[onclick="filterBookings('${status}')"]`).classList.add('active');
         }
 
         // Testimonial management functions
